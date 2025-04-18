@@ -4,7 +4,6 @@ from typing import Dict, Any
 from venv import logger
 
 from src.exchanges.bitget import BitgetExchange
-from src.exchanges.lbank import LBankExchange
 from src.exchanges.mexc import MexcExchange
 from src.exchanges.ws.websocket import Exchange
 from src.services.find_spread_service import SpreadService
@@ -16,7 +15,7 @@ async def main():
     mexc = MexcExchange()
     bitget = BitgetExchange()
 
-    service.add_exchange(mexc)
+    # service.add_exchange(mexc)
     service.add_exchange(bitget)
 
     try:
