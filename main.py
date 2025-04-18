@@ -1,12 +1,17 @@
 import asyncio
 import json
-from typing import Dict, Any
+import sys
+import platform
+from typing import Dict, Any, List
 from venv import logger
 
+from src.commons.fetch_symbols import ExchangeFetchSymbols
 from src.exchanges.bitget import BitgetExchange
 from src.exchanges.mexc import MexcExchange
-from src.exchanges.ws.websocket import Exchange
 from src.services.find_spread_service import SpreadService
+
+if platform.system() == 'Windows':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 async def main():
@@ -15,7 +20,7 @@ async def main():
     mexc = MexcExchange()
     bitget = BitgetExchange()
 
-    # service.add_exchange(mexc)
+    service.add_exchange(mexc)
     service.add_exchange(bitget)
 
     try:

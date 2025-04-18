@@ -28,38 +28,24 @@ class BitgetExchange(Exchange):
 
     async def subscribe(self, symbols: List[str]):
         """Subscribe to market data for the given symbols"""
-        if symbols is None:
+        for symbol in symbols:
+            formatted_symbol = symbol.upper().replace("_", "")
+            self.available_pairs.add(formatted_symbol)
             subscription = {
-              "op":"subscribe",
-              "args":[
-                {
-                    "instType": "USDT-FUTURES",
-                    "channel": "ticker",
-                    "instId": "BTCUSDT"
-                }
-              ]
-            }
-            await self.websocket.send(json.dumps(subscription))
-            logger.info(f"{self.exchange_name} subscribed to all tickers")
-        else:
-            for symbol in symbols:
-                formatted_symbol = symbol.upper().replace("_", "")
-                self.available_pairs.add(formatted_symbol)
-                subscription = {
-                  "op":"subscribe",
-                  "args":[
+                "op": "subscribe",
+                "args": [
                     {
-                      "instType":"USDT-FUTURES",
-                      "channel":"ticker",
-                      "instId": formatted_symbol
+                        "instType": "USDT-FUTURES",
+                        "channel": "ticker",
+                        "instId": formatted_symbol
                     }
-                  ]
-                }
+                ]
+            }
+
             await self.websocket.send(json.dumps(subscription))
-            logger.info(f"{self.exchange_name} subscribed to {formatted_symbol}")
+            # logger.info(f"{self.exchange_name} subscribed to {formatted_symbol}")
 
     async def _process_message(self, data: Dict[str, Any]):
-        print(data)
         """Process incoming MEXC websocket messages"""
         try:
             if data.get("channel") == "pong":
@@ -73,16 +59,17 @@ class BitgetExchange(Exchange):
 
             # timestamp = data.get("ts", 0) / 1000  # Convert to seconds
 
-            logger.debug(f"Received data successful")
+            # logger.debug(f"Received data successful")
             for ticker in data.get("data", []):
                 try:
                     symbol = ticker.get("instId", "").upper()
+                    formatted_symbol = symbol.replace("USDT", "_USDT")
                     price = float(ticker.get("lastPr", 0))
                     timestamp = int(ticker.get("ts", 0)) / 1000
 
                     if symbol and price:
                         self.prices[symbol] = price
-                        self.notify_price_update(symbol, price, timestamp)
+                        self.notify_price_update(formatted_symbol, price, timestamp)
 
                 except (ValueError, TypeError) as e:
                     logger.error(f"Error processing ticker {ticker.get('symbol')}: {e}")

@@ -4,6 +4,7 @@ import asyncio
 
 from attr import dataclass
 
+from src.commons.fetch_symbols import ExchangeFetchSymbols
 from src.entities.entities_spread import TokenPrice, SpreadOpportunity
 from src.exchanges.ws.websocket import Exchange
 from src.utils.logger import logger
@@ -109,12 +110,15 @@ class SpreadService:
         # - Send a notification
         # - Place trades automatically
 
-    async def start(self, symbols: List[str] | None = None):
+
+    async def start(self):
         """Start the spread service"""
         if self.running:
             return
 
         self.running = True
+
+        all_symbols_exchange = await ExchangeFetchSymbols.get_all_symbols_exchange()
 
         # Connect to all exchanges
         connect_tasks = []
@@ -125,9 +129,13 @@ class SpreadService:
 
         # Subscribe to all symbols
         subscribe_tasks = []
-        for exchange in self.exchanges.values():
-            subscribe_tasks.append(exchange.subscribe(symbols))
+        for exchange_name, exchange in self.exchanges.items():
+            normalized_exchange_name = exchange_name.lower()
 
+            symbols = all_symbols_exchange.get(normalized_exchange_name)
+
+            subscribe_tasks.append(exchange.subscribe(symbols))
+        print(subscribe_tasks)
         await asyncio.gather(*subscribe_tasks)
 
         # Start receiving messages from all exchanges

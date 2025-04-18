@@ -1,6 +1,6 @@
 import asyncio
 import json
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import Dict, Any, Callable, Set, Optional, List
 import websockets
 from collections import defaultdict
@@ -9,7 +9,7 @@ from src.entities.entities_spread import TokenPrice
 from src.utils.logger import logger
 
 
-class Exchange:
+class Exchange(ABC):
     def __init__(self, exchange_name: str):
         self.exchange_name = exchange_name
         self.websocket = None
