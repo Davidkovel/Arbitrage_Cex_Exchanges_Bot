@@ -41,24 +41,8 @@ class Exchange:
         """Process incoming websocket messages"""
         pass
 
-    # async def run_websocket(self):
-    #     """Запуск WebSocket клиента"""
-    #     if self._running:
-    #         return
-    #
-    #     self._running = True
-    #     try:
-    #         await self.connect()
-    #
-    #         print("WebSocket started successfully")
-    #
-    #     except Exception as e:
-    #         self._running = False
-    #         raise
-
     async def _keep_alive(self):
         """Поддержание соединения"""
-        print('ds')
         while self._running:
             await asyncio.sleep(10)
             await self.send_ping()
@@ -73,32 +57,20 @@ class Exchange:
         logger.info(f"{self.exchange_name} attempting to reconnect...")
         await self.connect()
 
-    # async def subscribe_ticker(self, symbol: str):
-    #     """Абстрактный метод подписки на тикер"""
-    #     sub_msg = {
-    #         "method": "sub.ticker",
-    #         "param": {
-    #             "symbol": symbol
-    #         }
-    #     }
-    #
-    #     try:
-    #         await self.websocket.send(json.dumps(sub_msg))
-    #     except Exception as e:
-    #         logger.error(f"{self.exchange_name} subscribe error: {e}")
-
     async def receive_messages(self):
         """Основной цикл приема сообщений"""
-        print('ds2')
         while self._running:
             try:
                 message = await self.websocket.recv()
-                print('Raw data ', message)
+                # print('Raw data ', message)
                 try:
                     data = json.loads(message)
                     await self._process_message(data)
                 except json.JSONDecodeError:
                     logger.error(f"{self.exchange_name} non-JSON message: {message}")
+                except Exception as ex:
+                    print(message)
+                    logger.error(f"{self.exchange_name} message processing error: {ex}")
             except websockets.exceptions.ConnectionClosed:
                 logger.error(f"{self.exchange_name} connection closed, reconnecting...")
                 await self._reconnect()
@@ -107,19 +79,6 @@ class Exchange:
                 logger.error(f"{self.exchange_name} receive error: {e}")
                 # await self._reconnect()
                 break
-
-    # def _process_message(self, data: Dict[str, Any]):
-    #     """Обработка полученного сообщения"""
-    #     if data["data"] == "sucess":
-    #         print("Success")
-
-    # async def get_price_coin_futures(self, data: Dict[str, Any]):
-    #     """Получение цены монеты"""
-    #     if 'data' in data:
-    #         # Нормализация символа (удаление _USDT если есть)
-    #         symbol = data['data'].get('symbol', '').replace('_USDT', '')
-    #         last_price = data['data'].get('lastPrice')
-    #         self.callback(self.exchange_name, {'symbol': symbol, 'lastPrice': last_price})
 
     async def close(self):
         self._running = False

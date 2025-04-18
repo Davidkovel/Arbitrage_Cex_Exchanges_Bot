@@ -109,7 +109,7 @@ class SpreadService:
         # - Send a notification
         # - Place trades automatically
 
-    async def start(self, symbols: List[str]):
+    async def start(self, symbols: List[str] | None = None):
         """Start the spread service"""
         if self.running:
             return
