@@ -48,7 +48,7 @@ class BitgetExchange(Exchange):
     async def _process_message(self, data: Dict[str, Any]):
         """Process incoming MEXC websocket messages"""
         try:
-            if data.get("channel") == "pong":
+            if data == "pong":
                 logger.debug(f"Received pong: {data.get('data')}")
                 return
 
@@ -60,21 +60,32 @@ class BitgetExchange(Exchange):
             # timestamp = data.get("ts", 0) / 1000  # Convert to seconds
 
             # logger.debug(f"Received data successful")
+
             for ticker in data.get("data", []):
                 try:
                     symbol = ticker.get("instId", "").upper()
-                    formatted_symbol = symbol.replace("USDT", "_USDT")
+                    # formatted_symbol = symbol.replace("USDT", "_USDT")
                     price = float(ticker.get("lastPr", 0))
                     timestamp = int(ticker.get("ts", 0)) / 1000
 
                     if symbol and price:
                         self.prices[symbol] = price
-                        self.notify_price_update(formatted_symbol, price, timestamp)
+                        # logger.warning(f"BITGET Price update: {symbol} - {price}")
+                        self.notify_price_update(symbol, price, timestamp)
 
                 except (ValueError, TypeError) as e:
                     logger.error(f"Error processing ticker {ticker.get('symbol')}: {e}")
 
             return
         except Exception as ex:
-            logger.error(f"Message processing failed: {ex}")
-            logger.debug(f"Raw message that failed: {data}")
+            # Todo: Тут ошибка позже надо разобраться и доделать
+            #  "2025-04-22 20:14:58.889 | ERROR    | src.exchanges.bitget:_process_message:81 - [BITGET] Message processing failed: ('MEXC', 'DYDXUSDT')
+            # 2025-04-22 20:14:58.889 | DEBUG    | src.exchanges.bitget:_process_message:82 - [BITGET] Raw message that failed: {"action": "snapshot", "arg": {"instType": "USDT-FUTURES", "channel": "ticker", "instId": "DYDXUSDT"}, "data": [{"instId": "DYDXUSDT", "lastPr": "0.6138", "bidPr": "0.6136", "askPr": "0.6138", "bidSz""
+            #
+            pass
+            # logger.error(f"[BITGET] Message processing failed: {ex}")
+            # logger.debug(f"[BITGET] Raw message that failed: {json.dumps(data)[:200]}")
+
+    async def send_ping(self):
+        if self.websocket:
+            await self.websocket.send("ping")

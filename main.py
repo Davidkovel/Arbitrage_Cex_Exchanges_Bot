@@ -15,7 +15,7 @@ if platform.system() == 'Windows':
 
 
 async def main():
-    service = SpreadService(min_spread_percent=0.5)
+    service = SpreadService(min_spread_percent=1.0)
 
     mexc = MexcExchange()
     bitget = BitgetExchange()
@@ -27,7 +27,7 @@ async def main():
         await service.start()
 
         while True:
-            await asyncio.sleep(1)
+            await asyncio.sleep(6)
     except KeyboardInterrupt:
         logger.info("Stopping service...")
         await service.stop()

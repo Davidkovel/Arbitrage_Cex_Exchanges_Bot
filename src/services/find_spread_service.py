@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 from typing import Any, Dict, Tuple, List
 import asyncio
@@ -27,17 +28,18 @@ class SpreadFinder:
         # Update the price in our tracking dictionary
         key = (price_data.exchange, price_data.symbol)
         self.token_prices[key] = price_data
-
         # Check for spread opportunities with this symbol
         self._check_spreads(price_data.symbol)
 
     def _check_spreads(self, symbol: str):
         """Check for spread opportunities for a specific symbol"""
+        normalized_symbol = self._normalize_symbol(symbol)
+
         # Find all exchanges that have this symbol
-        exchanges_with_symbol = [
-            exchange for (exchange, s), price_data in self.token_prices.items()
-            if s == symbol
-        ]
+        exchanges_with_symbol = []
+        for (exchange, s), price_data in self.token_prices.items():
+            if self._normalize_symbol(s) == normalized_symbol:
+                exchanges_with_symbol.append(exchange)
 
         if len(exchanges_with_symbol) < 2:
             return  # Need at least two exchanges for a spread
@@ -49,7 +51,13 @@ class SpreadFinder:
         sell_price = 0
 
         for exchange in exchanges_with_symbol:
-            price_data = self.token_prices.get((exchange, symbol))
+            original_symbol = next(
+                s for (ex, s) in self.token_prices.keys()
+                if ex == exchange and self._normalize_symbol(s) == normalized_symbol
+            )
+
+            price_data = self.token_prices.get((exchange, original_symbol))
+
             if not price_data:
                 continue
 
@@ -62,8 +70,14 @@ class SpreadFinder:
                 sell_exchange = exchange
 
         # Calculate spread
+
         if buy_exchange and sell_exchange and buy_exchange != sell_exchange:
             spread_percent = ((sell_price - buy_price) / buy_price) * 100
+            # logger.debug(
+            #     f"Spread for {symbol}: {spread_percent:.2f}% (Buy: {buy_exchange} @ {buy_price}, Sell: {sell_exchange} @ {sell_price})")
+            if spread_percent > 1:
+                logger.warning(
+                    f"Spread for {symbol}: {spread_percent:.2f}% (Buy: {buy_exchange} @ {buy_price}, Sell: {sell_exchange} @ {sell_price})")
 
             if spread_percent >= self.min_spread_percent:
                 # We found a viable spread opportunity
@@ -83,6 +97,9 @@ class SpreadFinder:
                 # Notify all registered callbacks
                 for callback in self.spread_callbacks:
                     callback(opportunity)
+
+    def _normalize_symbol(self, symbol: str) -> str:
+        return symbol.replace("_", "").replace("-", "").upper().split("USDT")[0]
 
 
 class SpreadService:
@@ -109,7 +126,6 @@ class SpreadService:
         # - Store opportunity in a database
         # - Send a notification
         # - Place trades automatically
-
 
     async def start(self):
         """Start the spread service"""

@@ -41,16 +41,15 @@ class Exchange(ABC):
         """Process incoming websocket messages"""
         pass
 
+    @abstractmethod
+    async def send_ping(self):
+        pass
+
     async def _keep_alive(self):
         """Поддержание соединения"""
         while self._running:
             await asyncio.sleep(10)
             await self.send_ping()
-
-    async def send_ping(self):
-        """Отправка ping"""
-        if self.websocket:
-            await self.websocket.send(json.dumps({"method": "ping"}))
 
     async def _reconnect(self):
         await asyncio.sleep(5)
@@ -64,6 +63,10 @@ class Exchange(ABC):
                 message = await self.websocket.recv()
                 # print('Raw data ', message)
                 try:
+                    # @TODO: Исправить обработка pong от bitget т.к он присылает не json а строка. Исправить надо позже
+                    if message == "pong":
+              #          logger.info(f"Pong received from {self.exchange_name}")
+                        continue
                     data = json.loads(message)
                     await self._process_message(data)
                 except json.JSONDecodeError:

@@ -57,7 +57,7 @@ class MexcExchange(Exchange):
         """Process incoming MEXC websocket messages"""
         try:
             if data.get("channel") == "pong":
-                logger.debug(f"Received pong: {data.get('data')}")
+                # logger.debug(f"Received pong: {data.get('data')}")
                 return
 
             if data.get("data") == "success":
@@ -75,6 +75,7 @@ class MexcExchange(Exchange):
 
                     if symbol and price:
                         self.prices[symbol] = price
+                        # logger.warning(f"MEXC Price update: {symbol} - {price}")
                         self.notify_price_update(symbol, price, timestamp)
 
                 except (ValueError, TypeError) as e:
@@ -82,5 +83,12 @@ class MexcExchange(Exchange):
 
             return
         except Exception as ex:
-            logger.error(f"Message processing failed: {ex}")
-            logger.debug(f"Raw message that failed: {data}")
+            # Todo: Тут также ошибка как и с bitget биржа
+            pass
+
+            # logger.error(f"[MEXC] Message processing failed: {ex}")
+            # logger.debug(f"[MEXC] Raw message that failed: {json.dumps(data)[:200]}")
+
+    async def send_ping(self):
+        if self.websocket:
+            await self.websocket.send(json.dumps({"method": "ping"}))
