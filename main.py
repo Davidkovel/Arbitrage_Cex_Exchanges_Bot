@@ -6,8 +6,13 @@ from typing import Dict, Any, List
 from venv import logger
 
 from src.commons.fetch_symbols import ExchangeFetchSymbols
+from src.exchanges.bingx import BingXExchange
 from src.exchanges.bitget import BitgetExchange
+from src.exchanges.bybit import BybitExchange
+from src.exchanges.gate import GateExchange
+from src.exchanges.lbank import LBankExchange
 from src.exchanges.mexc import MexcExchange
+from src.exchanges.okx import OkxExchange
 from src.services.find_spread_service import SpreadService
 
 if platform.system() == 'Windows':
@@ -15,13 +20,22 @@ if platform.system() == 'Windows':
 
 
 async def main():
-    service = SpreadService(min_spread_percent=1.0)
+    service = SpreadService(min_spread_percent=5)
 
-    mexc = MexcExchange()
-    bitget = BitgetExchange()
+    exchanges = [
+        MexcExchange(),
+        BitgetExchange(),
+        GateExchange(),
+        BybitExchange(),
+        # OkxExchange()
+    ]
+    #bingx = BingXExchange()
+    #lbank = LBankExchange()x
 
-    service.add_exchange(mexc)
-    service.add_exchange(bitget)
+    for exchange in exchanges:
+        service.add_exchange(exchange)
+    #service.add_exchange(bingx)
+    #service.add_exchange(lbank)
 
     try:
         await service.start()
